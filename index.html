@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OME Dynamic QR Code</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #d0e9fa;
+            color: #333;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        .qr-container {
+            display: flex;
+            flex-direction: row;
+            border: 2px solid #444;
+            border-radius: 10px;
+            width: 1200px; /* Fixed width */
+            height: 460px; /* Fixed height */
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            box-sizing: border-box; /* Ensures padding doesn't increase total size */
+            padding: 20px;
+        }
+
+        .time-container {
+            padding: 40px;
+            flex: 1; /* Take half the container */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding-right: 20px;
+            font-size: 2rem;
+            color: #023c63;
+        }
+
+        .qr-code-container {
+            flex: 1; /* Take the other half */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            width: 450px; /* Fixed size for QR code */
+            height: 450px; /* Fixed size for QR code */
+            display: block;
+        }
+
+        #date {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        #time {
+            font-weight: bold;
+        }
+
+        /* Overlay for password prompt */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5rem;
+            z-index: 1000;
+        }
+
+        #password-prompt {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="password"] {
+            font-size: 1.2rem;
+            margin-top: 10px;
+            padding: 10px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+    <!-- Overlay for password protection -->
+    <div id="overlay">
+        <div id="password-prompt">
+            <label for="password">Enter Password:</label>
+            <input type="password" id="password">
+            <button onclick="validatePassword()">Submit</button>
+        </div>
+    </div>
+
+    <img src="https://drive.google.com/thumbnail?id=1biw0LeK_X0ntKPdH4-8XaPUcl1yGDl59" width="110px">
+    <h1>QR Code ลงเวลาเข้าเรียน สศท.สปท.</h1>
+    <!-- QR Code Section -->
+    <div class="qr-container">
+        <!-- Time Section -->
+        <div class="time-container">
+            <div id="date"></div>
+            <div id="time"></div>
+        </div>
+        <!-- QR Code Section -->
+        <div class="qr-code-container">
+            <canvas id="qrCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const qrCanvas = document.getElementById('qrCanvas');
+        const dateElement = document.getElementById('date');
+        const timeElement = document.getElementById('time');
+        const overlay = document.getElementById('overlay');
+        const passwordPrompt = document.getElementById('password-prompt');
+
+        // Password validation
+        function validatePassword() {
+            const password = document.getElementById('password').value;
+            if (password === "ome") {
+                overlay.style.display = "none"; // Hide the overlay
+                initialize(); // Start the main page functionalities
+            } else {
+                alert("Incorrect password. Please try again.");
+            }
+        }
+
+        // Show password prompt after a black screen
+        window.onload = function () {
+            setTimeout(() => {
+                passwordPrompt.style.display = "flex";
+            }, 500); // Delay before showing the password prompt
+        };
+
+        // Function to format date and time in Thailand format
+        function getThaiDateTime() {
+            const now = new Date();
+            const optionsDate = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'Asia/Bangkok',
+            };
+            const optionsTime = {
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                timeZone: 'Asia/Bangkok',
+                hour12: false,
+            };
+
+            const thaiDate = now.toLocaleDateString('th-TH', optionsDate);
+            const thaiTime = `เวลา ${now.getHours()} นาฬิกา ${now.getMinutes()} นาที ${now.getSeconds()} วินาที GMT+7`;
+
+            return { thaiDate, thaiTime };
+        }
+
+        // Function to display the live date and time in Thai format
+        function updateLiveClock() {
+            const { thaiDate, thaiTime } = getThaiDateTime();
+            dateElement.textContent = thaiDate;
+            timeElement.textContent = thaiTime;
+        }
+
+        // Function to update the QR code every 10 seconds
+        function updateQRCode() {
+            const timeString = new Date().toTimeString().split(' ')[0];
+            QRCode.toCanvas(qrCanvas, timeString, { width: 450 }, function (error) {
+                if (error) console.error(error);
+            });
+        }
+
+        // Initialize and start updating the clock and QR code
+        function initialize() {
+            updateLiveClock();
+            updateQRCode();
+            setInterval(updateLiveClock, 1000);
+            setInterval(updateQRCode, 5000);
+        }
+    </script>
+</body>
+</html>
