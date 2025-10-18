@@ -167,42 +167,58 @@
 
         // Function to format date and time in Thailand format
         function getThaiDateTime() {
-            const now = new Date();
-            const optionsDate = {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                timeZone: 'Asia/Bangkok',
-            };
-            const optionsTime = {
-                hour: 'numeric',
-                minute: 'numeric',
-                second: 'numeric',
-                timeZone: 'Asia/Bangkok',
-                hour12: false,
-            };
+    const now = new Date();
+    const optionsDate = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'Asia/Bangkok',
+    };
+    const optionsTime = {
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        timeZone: 'Asia/Bangkok',
+        hour12: false,
+    };
 
-            const thaiDate = now.toLocaleDateString('th-TH', optionsDate);
-            const thaiTime = `เวลา ${now.getHours()} นาฬิกา ${now.getMinutes()} นาที ${now.getSeconds()} วินาที GMT+7`;
+    const thaiDate = now.toLocaleDateString('th-TH', optionsDate);
+    const thaiTime = `เวลา ${now.getHours()} นาฬิกา ${now.getMinutes()} นาที ${now.getSeconds()} วินาที GMT+7`;
 
-            return { thaiDate, thaiTime };
-        }
+    return { thaiDate, thaiTime };
+}
 
-        // Function to display the live date and time in Thai format
-        function updateLiveClock() {
-            const { thaiDate, thaiTime } = getThaiDateTime();
-            dateElement.textContent = thaiDate;
-            timeElement.textContent = thaiTime;
-        }
+// ฟังก์ชันเดิมสำหรับอัปเดตนาฬิกา
+function updateLiveClock() {
+    const { thaiDate, thaiTime } = getThaiDateTime();
+    dateElement.textContent = thaiDate;
+    timeElement.textContent = thaiTime;
+}
 
-        // Function to update the QR code every 10 seconds
-        function updateQRCode() {
-            const timeString = new Date().toTimeString().split(' ')[0];
-            QRCode.toCanvas(qrCanvas, timeString, { width: 450 }, function (error) {
-                if (error) console.error(error);
-            });
-        }
+
+// ===== ส่วนที่แก้ไข =====
+// ฟังก์ชันสำหรับอัปเดต QR Code ทุก 10 วินาที
+function updateQRCode() {
+    const now = new Date();
+
+    // 1. ดึงค่า วัน, เดือน, ปี และแปลงเป็นปี พ.ศ.
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // เดือนใน JavaScript เริ่มที่ 0 จึงต้อง +1
+    const Year = now.getFullYear(); // แปลง ค.ศ. เป็น พ.ศ.
+
+    // 2. ดึงค่าเวลา (HH:MM:SS) จากโค้ดเดิม
+    const timeString = now.toTimeString().split(' ')[0];
+
+    // 3. นำวันที่และเวลามารวมกันเป็นข้อความเดียว
+    // รูปแบบผลลัพธ์: "DD/MM/YYYY HH:MM:SS" (เช่น "18/10/2568 21:43:00")
+    const fullDateTimeString = `${day}-${month}-${Year} ${timeString}`;
+
+    // 4. สร้าง QR Code จากข้อความที่มีทั้งวันที่และเวลา
+    QRCode.toCanvas(qrCanvas, fullDateTimeString, { width: 450 }, function (error) {
+        if (error) console.error(error);
+    });
+}
 
         // Initialize and start updating the clock and QR code
         function initialize() {
